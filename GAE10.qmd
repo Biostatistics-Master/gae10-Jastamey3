@@ -1,6 +1,6 @@
 ---
 title: "GAE10: PCA & NMDS"
-author: "Your Name Here"
+author: "Jaslyn"
 format: 
   html:
     theme: custom.scss
@@ -25,10 +25,18 @@ library(latex2exp)
 library(patchwork)
 library(kableExtra)
 library(tidyverse)
+library(vegan) 
+library(ggrepel) 
+library(FactoMineR) 
+library(factoextra) 
+library(broom)
 
 options(scipen = 10)
 
 options(knitr.kable.NA = "")
+
+
+
 
 ```
 
@@ -62,9 +70,69 @@ knitr::include_graphics("Kingfishers.png")
 # colors.csv. Please explore any grouping and/or patterning among the species
 # and their ecological/behavioral traits.
 
+scen1data <- read_csv("colors.csv", show_col_types = FALSE)
+
 ```
 
+```{r}
+#| label: fig-scen1biplot
+#| fig-cap: "PCA of hunting strategies"
+#| fig-asp: 0.8
+
+scen1PCA <- PCA(
+  scen1data,
+  quanti.sup = 13,
+  quali.sup = c(1, 14:17),
+  graph = FALSE
+)
+
+Indfig <- fviz_pca_ind(
+  scen1PCA,
+  repel = TRUE, 
+  label = "none",
+  habillage = 
+    "Hunting_strategy"
+    )
+
+
+Varfig <- fviz_pca_var(
+  scen1PCA,
+  repel = TRUE, 
+  label = "var"
+)
+
+Varfig +
+  Indfig +
+  plot_layout(ncol = 1)
+```
+
+A package was used for the PCA above [@FactoMineR]. The function fviz from a pacakge was used above [@factoextra] . A package was used to allow location of labels to not overlap [@ggrepel] .
+
+In the PCA- Biplot Hunting_Strategy, Light_environment, Parental_care and territoriality overlapped whenever addEllipses was true (this showed no significant difference between these) with all labels included. Went back and took out addEllipses and switched the labels to only be variables. Then did a Bi-Plot of individuals and changed the labels to be none\@fig-scen1biplot
+
+Vector interp: Strong correlation was seen with tail, rump, etc. in 1st principle component, tends to be how blue the bird is (primary, secondary, tail, etc). Belly, breast etc. were more strongly correlated with 2nd principle component, how much red/green you get. @fig-scen1biplot
+
+Centroid in these plots are big compared to the other symbols. The BiPlot may suggests some things going on that may be affecting the evolution of color in these birds.
+
+Hunting_strategy showed the greatest seperation and showed that these birds might have different colors based on there hunting strategy. @fig-scen1biplot The water divers tend to be more blue, the ground-dwellers have less markings on undersides that are less obvious.
+
+In light_environment there appears to be a cluster away from the bright blue for the forest birds, less bright blue, more red/green. Parental_care shows whether or not the entire family takes care of young. Shows there may be more color in underside of those whose entire family takes care of young. Territoriality shows a lot of overlap, looks less like territoriality had any effect, so we took these out and just focused on hunting_strategy.
+
+No huge differences, however, one could come up with hypotheses such as "that being a diving bird you'd want to be more blue".
+
 ### References:
+
+Babarović, F., C. R. Cooney, Z. K. Varley, L. O. Nouri, N. J. Nadeau, and G. H. Thomas. 2023. [The effects of ecology and behavior on the evolution of coloration in Coraciiformes](https://doi.org/10.1093/beheco/arad008). Behavioral Ecology 34:387–398.
+
+Cooney, C. R., Z. K. Varley, L. O. Nouri, C. J. A. Moody, M. D. Jardine, and G. H. Thomas. 2019. [Sexual selection predicts the rate and direction of colour divergence in a large avian radiation](https://doi.org/10.1038/s41467-019-09859-7). Nature Communications 10:1773.
+
+Kassambara, A., and F. Mundt. 2020. [Factoextra: Extract and visualize the results of multivariate data analyses](https://cran.r-project.org/package=factoextra).
+
+Lê, S., J. Josse, and F. Husson. 2008. [FactoMineR: A package for multivariate analysis](https://doi.org/10.18637/jss.v025.i01). Journal of Statistical Software 25:1–18.
+
+Sabo, A. E., K. L. Frerker, D. M. Waller, and E. L. Kruger. 2017. [Deer-mediated changes in environment compound the direct impacts of herbivory on understorey plant communities](https://doi.org/10.1111/1365-2745.12748). Journal of Ecology 105:1386–1398.
+
+Slowikowski, K. 2024. [Ggrepel: Automatically position non-overlapping text labels with ’ggplot2’](https://cran.r-project.org/package=ggrepel).
 
 ------------------------------------------------------------------------
 
@@ -88,6 +156,50 @@ In Summer 2011, the researchers visited 17 deer exclosures in upland forests of 
 # Use NMDS to explore the differences in plant community inside and outside the
 # deer exclosures, then test for differences in the plant communities between
 # the deer exclosures and the adjacent forests.
+
+df2 <- read_csv("Sabo_etal_data.csv", show_col_types = FALSE)
 ```
+
+```{r}
+#| label: scen2nMDS
+#| results: hide
+
+scen2mds <- metaMDS(
+  df2[,-c(1:2)],
+  k=4
+)
+
+
+scen2mds$stress
+```
+
+A package was used [@vegan] to run MDS and check stress levels. Plant communities overlapped almost completely in the nMDS plot scores, the two types were the control and the exclosure. These nMDS plot scores were essentially produced by non-metric multidimensional scaling of square-root transformed counts
+
+```{r}
+#| label: tbl-scen2PERMANOVA
+#| tbl-cap: "PERMANOVA to test for a difference in plant assemblages between deer exclusion areas and adjacent areas."
+
+scen2PERMANOVA <- adonis2(
+  df2[,-c(1,2)] ~ Treatment,
+  data = df2,
+  by = "margin",
+  permutations = 10001
+)
+
+kbl(
+  scen2PERMANOVA,
+  format = "markdown",
+  digits = c(0,3,3,3,3),
+  col.names = c(
+    "df",
+    "SS",
+    "$R^2$",
+    "F",
+    "P"
+  )
+)
+```
+
+Failed to reject the null hypothesis that the communities are the same.
 
 ### References:
