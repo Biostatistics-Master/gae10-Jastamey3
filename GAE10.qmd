@@ -200,6 +200,6 @@ kbl(
 )
 ```
 
-Failed to reject the null hypothesis that the communities are the same.
+A PERMANOVA was performed using a package [@vegan]. We then failed to reject the null hypothesis that the communities are the same @tbl-scen2PERMANOVA
 
 ### References:
